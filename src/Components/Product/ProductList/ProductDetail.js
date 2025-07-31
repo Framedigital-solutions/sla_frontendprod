@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useCart } from "../../../CartContext";
-import ProductCard from "./ProductCard";
+
 import ProductLoader from "./ProductLoader";
 import { userStore } from "../../../store/userStore";
 import toast, { Toaster } from "react-hot-toast";
@@ -25,7 +25,7 @@ const ProductDetailComplete = () => {
       setLoading(true);
       try {
         const response = await fetch(
-          `https://backend.srilaxmialankar.com/gold/${productId}`
+          `${process.env.REACT_APP_API_URL || 'http://localhost:8000'}/gold/${productId}`
         );
         if (!response.ok) throw new Error("Failed to fetch product");
         const data = await response.json();
@@ -41,9 +41,8 @@ const ProductDetailComplete = () => {
     const fetchShopDetails = async () => {
       try {
         const response = await fetch(
-          "https://backend.srilaxmialankar.com/shopdetails"
+          `${process.env.REACT_APP_API_URL || 'http://localhost:8000'}/shopdetails`
         );
-
         if (!response.ok) throw new Error("Failed to fetch shop details");
         const data = await response.json();
         setShopDetails(data[0]);
@@ -56,7 +55,7 @@ const ProductDetailComplete = () => {
       setLoadingRelated(true);
       try {
         const response = await fetch(
-          "https://backend.srilaxmialankar.com/related/"
+          `${process.env.REACT_APP_API_URL || 'http://localhost:8000'}/related/`
         );
         if (!response.ok) throw new Error("Failed to fetch related products");
         const data = await response.json();

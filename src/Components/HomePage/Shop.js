@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
+import { CATEGORIES } from "../../config/api.config";
 import { Link } from "react-router-dom";
 import axios from "axios";
 import { Swiper, SwiperSlide } from "swiper/react";
@@ -17,7 +18,7 @@ const CategoryShowcase = ({ navigateShop }) => {
   const fetchCategories = async () => {
     try {
       const response = await fetch(
-        "https://backend.srilaxmialankar.com/category/getAllCategory"
+        CATEGORIES.ALL
       );
 
       const data = await response.json();
@@ -91,9 +92,7 @@ const CategoryShowcase = ({ navigateShop }) => {
 
               {/* Category Name */}
               <div className="absolute bottom-4 left-4 text-white">
-                <Link to="/productlist">
-                  <h3 className="text-xl font-garamond">{category.title}</h3>
-                </Link>
+                <h3 className="text-xl font-garamond">{category.title}</h3>
               </div>
             </Link>
           </SwiperSlide>

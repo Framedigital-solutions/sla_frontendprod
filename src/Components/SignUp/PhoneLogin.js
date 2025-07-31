@@ -1,11 +1,12 @@
 import React, { useState } from "react";
+import { AUTH } from "../../config/api.config";
 import { useNavigate } from "react-router-dom";
 import toast, { Toaster } from "react-hot-toast";
 import { userStore } from "../../store/userStore";
 import { X, Phone } from "lucide-react";
 import login from "../../assets/login.jpg";
 
-const BASE_URL = "https://backend.srilaxmialankar.com/auth";
+const BASE_URL = AUTH.BASE;
 
 const PhoneLogin = () => {
   const [phone, setPhone] = useState("");

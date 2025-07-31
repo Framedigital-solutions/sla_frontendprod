@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { OTHER } from "../../config/api.config";
 
 const TestimonialsComponent = () => {
   const [testimonials, setTestimonials] = useState([]);
@@ -9,7 +10,7 @@ const TestimonialsComponent = () => {
     const fetchTestimonials = async () => {
       try {
         const res = await fetch(
-          "https://backend.srilaxmialankar.com/testimonial"
+          OTHER.TESTIMONIALS
         );
         const data = await res.json();
         setTestimonials(data);

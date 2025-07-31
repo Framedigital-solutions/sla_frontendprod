@@ -1,13 +1,10 @@
 import { redirect } from "react-router-dom";
-import { userStore } from "../store/userStore";
-import { load } from "@cashfreepayments/cashfree-js";
 
-// const BASE_URL = "https://backend.srilaxmialankar.com/order";
-// const BASE_URL = "https://backend.srilaxmialankar.com/order";
-// const BASE_URL = "https://backend.srilaxmialankar.com/order";
-const BASE_URL = "https://backend.srilaxmialankar.com/order";
-// const BASE_URL = "https://backend.srilaxmialankar.com/order";
-// session_25GiIcZvoOd02yUSgNpoteTHTQJMBRi7qv4RI9P9km96o4sxC3113YEDXmyr88xUdhrxycls4C5TegCF9rN1w6qWl4sZkhxrCyhxdZ5iiY68BJks4sIlM5qmb98pQApaymentpayment
+import { load } from "@cashfreepayments/cashfree-js";
+import { BASE_URL } from "../config/api.config";
+
+const ORDER_BASE_URL = `${BASE_URL}/order`;
+
 const getAuthHeaders = () => {
   const token = localStorage.getItem("token");
   //   const token = userStore((state) => state.token);
@@ -23,7 +20,7 @@ export const createOrder = async (orderData) => {
   });
 
   try {
-    const response = await fetch(`${BASE_URL}/create`, {
+    const response = await fetch(`${ORDER_BASE_URL}/create`, {
       method: "POST",
       headers: getAuthHeaders(),
       body: JSON.stringify(orderData),
@@ -67,12 +64,16 @@ export const createOrder = async (orderData) => {
 
 export const verifyPayment = async (paymentData) => {
   try {
-    const response = await fetch(`${BASE_URL}/verify-payment`, {
+    const response = await fetch(`${ORDER_BASE_URL}/verify`, {
       method: "POST",
       headers: getAuthHeaders(),
       body: JSON.stringify(paymentData),
     });
-    if (!response.ok) throw new Error("Payment verification failed");
+
+    if (!response.ok) {
+      throw new Error("Payment verification failed");
+    }
+
     return await response.json();
   } catch (error) {
     throw new Error(error.message);
@@ -81,10 +82,14 @@ export const verifyPayment = async (paymentData) => {
 
 export const getUserOrders = async (userId) => {
   try {
-    const response = await fetch(`${BASE_URL}/user/${userId}`, {
+    const response = await fetch(`${ORDER_BASE_URL}/user`, {
       headers: getAuthHeaders(),
     });
-    if (!response.ok) throw new Error("Failed to fetch orders");
+
+    if (!response.ok) {
+      throw new Error("Failed to fetch user orders");
+    }
+
     return await response.json();
   } catch (error) {
     throw new Error(error.message);
@@ -93,10 +98,14 @@ export const getUserOrders = async (userId) => {
 
 export const getOrderDetails = async (orderId) => {
   try {
-    const response = await fetch(`${BASE_URL}/${orderId}`, {
+    const response = await fetch(`${ORDER_BASE_URL}/user/${orderId}`, {
       headers: getAuthHeaders(),
     });
-    if (!response.ok) throw new Error("Failed to fetch order details");
+
+    if (!response.ok) {
+      throw new Error("Failed to fetch order details");
+    }
+
     return await response.json();
   } catch (error) {
     throw new Error(error.message);

@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { AUTH } from "../../config/api.config";
 import { Link, useNavigate } from "react-router-dom";
 import { X, User } from "lucide-react";
 import { userStore } from "../../store/userStore";
@@ -27,7 +28,7 @@ const Login = () => {
     e.preventDefault();
     try {
       const response = await fetch(
-        "https://backend.srilaxmialankar.com/auth/login",
+        AUTH.LOGIN,
         {
           method: "POST",
           headers: {
@@ -57,25 +58,76 @@ const Login = () => {
 
   const loginWithGoogleHandler = async () => {
     try {
+      console.log('Starting Google Sign-In flow...');
+      
+      // Step 1: Sign in with Google popup
       const userCred = await signInWithPopup(firebaseAuth, provider);
+      console.log('Google Sign-In successful, user:', userCred.user);
+      
+      // Step 2: Get ID token
       const token = await userCred.user.getIdToken();
+      console.log('Obtained ID token');
 
+      // Step 3: Validate token with backend
+      console.log('Validating token with backend...');
       const data = await validateUserJWTToken(token);
-      // const data = await validateUserJWTToken(token);
-      console.log("👉 Google Login Response:", data); //
+      
       if (data && data._id) {
+        // Successful login
+        console.log('User authenticated successfully:', data);
         setUser({ token, ...data });
-        getCart(data._id);
+        await getCart(data._id);
         localStorage.setItem("token", token);
+        
+        // Show success message and redirect
         alert("Login successful!");
         navigate("/profile");
       } else {
-        alert("User Needs to register first");
-        navigate("/signup");
+        // User needs to register first
+        console.log('User needs to register first');
+        alert("Please complete your registration first.");
+        // Store the Google auth data for registration
+        localStorage.setItem('googleAuthData', JSON.stringify({
+          email: userCred.user.email,
+          name: userCred.user.displayName,
+          photoURL: userCred.user.photoURL,
+          token
+        }));
+        navigate("/signup", { 
+          state: { 
+            fromGoogle: true,
+            email: userCred.user.email,
+            name: userCred.user.displayName
+          } 
+        });
       }
     } catch (err) {
-      console.error("Google login failed:", err);
-      alert("Google sign-in failed. Please try again.");
+      console.error('Google Sign-In Error:', {
+        code: err.code,
+        message: err.message,
+        email: err.email,
+        credential: err.credential,
+        stack: err.stack
+      });
+      
+      let errorMessage = "Google sign-in failed. ";
+      
+      // Handle specific error cases
+      if (err.code === 'auth/account-exists-with-different-credential') {
+        errorMessage = 'An account already exists with this email address but was created using a different sign-in method.\n\n' +
+                     'Please try signing in with your email and password, or use the "Forgot Password" link if you don\'t remember your password.\n\n' +
+                     'If you need assistance, please contact our support team.';
+      } else if (err.code === 'auth/popup-closed-by-user') {
+        errorMessage = 'Sign-in was canceled.';
+      } else if (err.code === 'auth/popup-blocked') {
+        errorMessage += 'Please allow popups for this website to sign in with Google.';
+      } else if (err.code === 'auth/network-request-failed') {
+        errorMessage += 'Network error. Please check your internet connection.';
+      } else {
+        errorMessage += 'Please try again later.';
+      }
+      
+      alert(errorMessage);
     }
   };
 

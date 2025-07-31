@@ -15,10 +15,11 @@ function About() {
   useEffect(() => {
     const fetchAboutData = async () => {
       try {
-        const res = await fetch("https://backend.srilaxmialankar.com/about");
+        const res = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:8000'}/about`);
         const data = await res.json();
         setAboutData(data.abouts[0]); // Assuming you want the first object
       } catch (error) {
+        console.error("Error fetching about data:", error);
         // Fallback data for debugging
         setAboutData({
           title: "About Shri Laxmi Alankar",

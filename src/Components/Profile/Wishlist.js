@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
+import { WISHLIST } from "../../config/api.config";
 import { IoClose } from "react-icons/io5";
 import { userStore } from "../../store/userStore";
 
@@ -22,9 +23,7 @@ const Wishlist = () => {
   const fetchWishlist = async () => {
     try {
       setLoading(true);
-      const response = await fetch(
-        `https://backend.srilaxmialankar.com/wishlist/wishlist/${userId}`
-      );
+      const response = await fetch(WISHLIST.USER(userId));
 
       if (!response.ok) {
         throw new Error(
@@ -52,7 +51,7 @@ const Wishlist = () => {
 
       // Example API call (implement based on your backend):
       // await fetch(
-      //   `https://backend.srilaxmialankar.com/wishlist/remove/${userId}/${productId}`,
+      //   `http://localhost:8000/wishlist/remove/${userId}/${productId}`,
       //   {
       //     method: "DELETE",
       //   }

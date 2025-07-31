@@ -1,7 +1,21 @@
 import React, { useState, useEffect } from "react";
+import { PRODUCTS } from "../../config/api.config";
+import axios from "axios";
 
 const JewelryShowcase = ({ navigateShop }) => {
   const [products, setProducts] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+  
+  // Fallback images from the public directory
+  const fallbackImages = [
+    '/Category/1.png',
+    '/Category/2.png',
+    '/Category/3.png',
+    '/Category/4.png',
+    '/Category/5.png',
+    '/Category/6.png'
+  ];
 
   const shopNavigationHandler = () => {
     navigateShop();
@@ -9,14 +23,83 @@ const JewelryShowcase = ({ navigateShop }) => {
 
   const fetchProducts = async () => {
     try {
-      const response = await fetch(
-        "https://backend.srilaxmialankar.com/Everyday"
-      );
-      const data = await response.json();
-      setProducts(data);
+      setIsLoading(true);
+      setError(null);
+      
+      const response = await axios.get(PRODUCTS.EVERYDAY, {
+        headers: {
+          'Accept': 'application/json',
+          'Cache-Control': 'no-cache'
+        },
+        timeout: 10000 // 10 second timeout
+      });
+
+      // Handle different response formats
+      let productsData = [];
+      if (Array.isArray(response.data)) {
+        productsData = response.data;
+      } else if (response.data && Array.isArray(response.data.products)) {
+        productsData = response.data.products;
+      } else if (response.data && response.data.data) {
+        productsData = response.data.data;
+      } else {
+        console.warn('Unexpected API response format:', response.data);
+        throw new Error('Unexpected API response format');
+      }
+
+      setProducts(productsData);
     } catch (error) {
       console.error("Failed to fetch everyday products:", error);
+      setError("Unable to load products. Please try again later.");
       setProducts([]);
+      
+      // Fallback to sample data with existing images
+      setProducts([
+        {
+          _id: 'fallback-1',
+          name: 'Elegant Gold Necklace',
+          price: 29999,
+          images: [fallbackImages[0]],
+          description: 'Beautiful gold necklace for everyday wear'
+        },
+        {
+          _id: 'fallback-2',
+          name: 'Diamond Ring',
+          price: 49999,
+          images: [fallbackImages[1]],
+          description: 'Stunning diamond ring for special occasions'
+        },
+        {
+          _id: 'fallback-3',
+          name: 'Pearl Earrings',
+          price: 19999,
+          images: [fallbackImages[2]],
+          description: 'Elegant pearl earrings for any occasion'
+        },
+        {
+          _id: 'fallback-4',
+          name: 'Gold Bangle',
+          price: 24999,
+          images: [fallbackImages[3]],
+          description: 'Traditional gold bangle with intricate design'
+        },
+        {
+          _id: 'fallback-5',
+          name: 'Silver Pendant',
+          price: 15999,
+          images: [fallbackImages[4]],
+          description: 'Modern silver pendant with unique design'
+        },
+        {
+          _id: 'fallback-6',
+          name: 'Gemstone Ring',
+          price: 34999,
+          images: [fallbackImages[5]],
+          description: 'Exquisite gemstone ring with diamonds'
+        }
+      ]);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -79,9 +162,16 @@ const JewelryShowcase = ({ navigateShop }) => {
             >
               <div className="relative">
                 <img
-                  src={product.image}
+                  src={product.images?.[0] || fallbackImages[0]}
                   alt={product.name}
                   className="w-full h-auto object-contain aspect-square bg-white"
+                  onError={(e) => {
+                    // Fallback to a default image if the main image fails to load
+                    if (e.target.src !== fallbackImages[0]) {
+                      e.target.src = fallbackImages[0];
+                    }
+                  }}
+                  loading="lazy"
                 />
                 <div className="absolute top-2 right-2 space-y-2 opacity-0 group-hover:opacity-100 transition-opacity">
                   {/* Share Button */}

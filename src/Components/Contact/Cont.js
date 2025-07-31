@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { SUPPORT } from "../../config/api.config";
 import contact from "../../assets/contact.jpg";
 
 const Cont = () => {
@@ -17,7 +18,7 @@ const Cont = () => {
   const [isLoadingQueries, setIsLoadingQueries] = useState(false);
 
   // API base URL
-  const API_BASE_URL = "https://backend.srilaxmialankar.com/support/";
+  const API_BASE_URL = SUPPORT.CREATE_TICKET;
 
   // Fetch existing support queries on component mount
   useEffect(() => {

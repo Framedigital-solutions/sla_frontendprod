@@ -1,5 +1,4 @@
-const BASE_URL = "https://backend.srilaxmialankar.com";
-// const BASE_URL = "https://backend.srilaxmialankar.com"
+import { BASE_URL } from '../config/api.config';
 
 // Product to add - {userId, productId, quantity}
 export const addToCart = async (productToAdd) => {
@@ -43,13 +42,13 @@ export const getCart = async (userId) => {
 // userId, ProductId
 export const removeSingleItem = async (userObj) => {
   try {
-    const response = await fetch(`${BASE_URL}/cart/cart/remove-single-item`, {
+    const res = await fetch(`${BASE_URL}/cart/cart/remove-single-item`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(userObj),
     });
-    if (!response.ok) throw new Error("Failed to remove single item cart ");
-    return await response.json();
+    if (!res.ok) throw new Error("Failed to remove single item cart ");
+    return await res.json();
   } catch (error) {
     throw new Error(error.message);
   }
@@ -57,13 +56,13 @@ export const removeSingleItem = async (userObj) => {
 
 export const removeFromCart = async (userObj) => {
   try {
-    const response = await fetch(`${BASE_URL}/cart/remove-from-cart`, {
+    const res = await fetch(`${BASE_URL}/cart/remove-from-cart`, {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(userObj),
     });
-    if (!response.ok) throw new Error("Failed to remove from the cart ");
-    return await response.json();
+    if (!res.ok) throw new Error("Failed to remove from the cart ");
+    return await res.json();
   } catch (error) {
     throw new Error(error.message);
   }

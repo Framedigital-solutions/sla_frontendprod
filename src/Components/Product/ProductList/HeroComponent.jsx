@@ -1,19 +1,27 @@
 import React, { useEffect, useState } from "react";
+import ProductService from "../../../api/productService";
 
 const HeroComponent = () => {
-  const [slides, setSlides] = useState([]);
+  const [slides, setSlides] = useState([
+    { image: "/placeholder-carousel-1.jpg", alt: "Jewelry Collection" },
+    { image: "/placeholder-carousel-2.jpg", alt: "Special Offers" },
+    { image: "/placeholder-carousel-3.jpg", alt: "New Arrivals" },
+  ]);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchSlides = async () => {
       try {
-        const response = await fetch(
-          "https://backend.srilaxmialankar.com/shop"
-        );
-        const data = await response.json();
-        setSlides(data);
+        const carouselData = await ProductService.getCarouselItems();
+        if (carouselData && carouselData.length > 0) {
+          setSlides(carouselData);
+        }
       } catch (error) {
-        console.error("Failed to fetch slides:", error);
+        console.error("Failed to fetch carousel items:", error);
+        // Fallback to default slides defined in state
+      } finally {
+        setIsLoading(false);
       }
     };
 

@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { SUPPORT } from "../../config/api.config";
 import {
   AlertCircle,
   Send,
@@ -98,7 +99,7 @@ const SupportPage = () => {
 
     try {
       const response = await fetch(
-        "https://backend.srilaxmialankar.com/ticket/tickets",
+        SUPPORT.TICKETS,
         {
           method: "POST",
           headers: {

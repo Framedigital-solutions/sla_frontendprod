@@ -1,4 +1,5 @@
-import React, { useEffect, useState, useCallback, useRef, memo } from "react";
+import React, { useState, useEffect, useRef, useCallback, memo } from "react";
+import { OTHER, WS_CONFIG } from "../../config/api.config";
 import axios from "axios";
 import { io } from "socket.io-client";
 
@@ -12,9 +13,7 @@ const GoldPrices = () => {
   // Fetch prices from API
   const fetchPrices = useCallback(async () => {
     try {
-      const response = await axios.get(
-        "https://backend.srilaxmialankar.com/today-price/PriceRouting"
-      );
+      const response = await axios.get(OTHER.GOLD_PRICE);
 
       const priceMap = {};
       response.data.forEach((item) => {
@@ -40,7 +39,7 @@ const GoldPrices = () => {
     }, 10000);
 
     try {
-      socketRef.current = io("https://backend.srilaxmialankar.com");
+      socketRef.current = io(WS_CONFIG.BASE);
 
       socketRef.current.on("connect", () => {
         setConnectionStatus("connected");

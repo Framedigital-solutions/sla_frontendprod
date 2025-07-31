@@ -1,11 +1,8 @@
-// const BASE_URL = 'https://backend.srilaxmialankar.com/blog';
-
-// const BASE_URL = "https://backend.srilaxmialankar.com/blog";
-const BASE_URL = "https://backend.srilaxmialankar.com/blog";
+import { BASE_URL } from '../config/api.config';
 
 export const getAllBlogs = async () => {
   try {
-    const response = await fetch(`${BASE_URL}/blogs`);
+    const response = await fetch(`${BASE_URL}/blog/blogs`);
     if (!response.ok) {
       const errorData = await response.json();
       throw new Error(errorData.message);
@@ -20,7 +17,7 @@ export const getAllBlogs = async () => {
 
 export const getBlogById = async (id) => {
   try {
-    const response = await fetch(`${BASE_URL}/blogs/${id}`);
+    const response = await fetch(`${BASE_URL}/blog/blogs/${id}`);
     if (!response.ok) {
       const errorData = await response.json();
       throw new Error(errorData.message);

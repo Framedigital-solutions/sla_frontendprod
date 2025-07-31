@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { AUTH } from "../../config/api.config";
 import { Link, useNavigate } from "react-router-dom";
 import { userStore } from "../../store/userStore";
 import { Eye, EyeOff } from "lucide-react"; // Eye icons
@@ -49,7 +50,7 @@ const Signup = () => {
 
     try {
       const response = await fetch(
-        "https://backend.srilaxmialankar.com/auth/signup",
+        AUTH.SIGNUP,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

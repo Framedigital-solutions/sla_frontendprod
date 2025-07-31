@@ -3,7 +3,7 @@ import React from "react";
 const PremiumBanner2= () => {
   return (
     <div className="relative bg-cover bg-center h-64 sm:h-96 mx-4 sm:mx-8 mt-10 lg:mx-16 rounded-lg overflow-hidden" 
-    style={{ backgroundImage: "url('banner2.png')" }}>
+    style={{ backgroundImage: `url('${process.env.PUBLIC_URL || ''}/banner/Banner2.jpg')` }}>
       {/* Overlay */}
       <div className="absolute inset-0 bg-black bg-opacity-50"></div>
       

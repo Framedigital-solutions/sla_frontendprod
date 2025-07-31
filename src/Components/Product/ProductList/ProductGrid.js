@@ -1,6 +1,87 @@
-import { useState, useEffect, useRef, useCallback } from "react";
-import axios from "axios";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import ProductService from "../../../api/productService";
+import axios from "axios";
+import { CATEGORIES, OTHER, WS_CONFIG } from "../../../config/api.config";
+
+// Image Gallery Modal Component
+const ImageGalleryModal = ({ isOpen, onClose, images, productName }) => {
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  if (!isOpen) return null;
+
+  const prevImage = () => {
+    setCurrentIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1));
+  };
+
+  const nextImage = () => {
+    setCurrentIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1));
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4" onClick={onClose}>
+      <div className="relative max-w-4xl w-full bg-white rounded-lg overflow-hidden" onClick={e => e.stopPropagation()}>
+        <button 
+          onClick={onClose}
+          className="absolute top-2 right-2 text-white bg-black bg-opacity-50 rounded-full p-2 z-10"
+        >
+          ✕
+        </button>
+        
+        <div className="relative h-[70vh]">
+          <img
+            src={images[currentIndex]}
+            alt={`${productName} - Image ${currentIndex + 1}`}
+            className="w-full h-full object-contain"
+          />
+          
+          {images.length > 1 && (
+            <>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  prevImage();
+                }}
+                className="absolute left-2 top-1/2 -translate-y-1/2 bg-black bg-opacity-50 text-white p-2 rounded-full hover:bg-opacity-75"
+              >
+                ❮
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  nextImage();
+                }}
+                className="absolute right-2 top-1/2 -translate-y-1/2 bg-black bg-opacity-50 text-white p-2 rounded-full hover:bg-opacity-75"
+              >
+                ❯
+              </button>
+              
+              <div className="absolute bottom-4 left-0 right-0 flex justify-center space-x-2">
+                {images.map((_, index) => (
+                  <button
+                    key={index}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setCurrentIndex(index);
+                    }}
+                    className={`w-2 h-2 rounded-full ${
+                      index === currentIndex ? 'bg-white' : 'bg-white bg-opacity-50'
+                    }`}
+                    aria-label={`Go to image ${index + 1}`}
+                  />
+                ))}
+              </div>
+              
+              <div className="absolute bottom-4 right-4 text-white text-sm bg-black bg-opacity-50 px-2 py-1 rounded">
+                {currentIndex + 1} / {images.length}
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const ViewProductsPage = () => {
   const [products, setProducts] = useState([]);
@@ -17,6 +98,14 @@ const ViewProductsPage = () => {
 
   // Favorites state
   const [favorites, setFavorites] = useState(new Set());
+  
+  // State for image gallery
+  const [galleryState, setGalleryState] = useState({
+    isOpen: false,
+    images: [],
+    currentIndex: 0,
+    productName: ''
+  });
 
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
@@ -27,6 +116,41 @@ const ViewProductsPage = () => {
   const [categoriesLoading, setCategoriesLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedCarat, setSelectedCarat] = useState("all");
+  
+  // Open gallery with product images
+  const openGallery = useCallback((product) => {
+    const images = [
+      ...(product.coverImage ? [product.coverImage] : []),
+      ...(product.images || [])
+    ].filter(Boolean);
+    
+    if (images.length > 0) {
+      setGalleryState({
+        isOpen: true,
+        images,
+        currentIndex: 0,
+        productName: product.name
+      });
+    }
+  }, []);
+  
+  // Close gallery
+  const closeGallery = useCallback(() => {
+    setGalleryState(prev => ({ ...prev, isOpen: false }));
+  }, []);
+  
+  // Navigate gallery images
+  const navigateGallery = useCallback((direction) => {
+    setGalleryState(prev => {
+      if (direction === 'next') {
+        const newIndex = (prev.currentIndex + 1) % prev.images.length;
+        return { ...prev, currentIndex: newIndex };
+      } else {
+        const newIndex = (prev.currentIndex - 1 + prev.images.length) % prev.images.length;
+        return { ...prev, currentIndex: newIndex };
+      }
+    });
+  }, []);
 
   const location = useLocation();
 
@@ -170,79 +294,133 @@ const ViewProductsPage = () => {
     setCalculatedPrices(newPrices);
   }, []);
 
-  const fetchProducts = async () => {
+  const fetchProducts = useCallback(async () => {
     try {
+      console.log('Starting to fetch products...');
       setIsLoading(true);
-      const response = await axios.get(
-        "https://backend.srilaxmialankar.com/gold"
-      );
-      console.log("Fetched products:", response.data);
-
-      let productsData = [];
-      if (
-        response.data &&
-        response.data.products &&
-        Array.isArray(response.data.products)
-      ) {
-        productsData = response.data.products;
-      } else if (Array.isArray(response.data)) {
-        productsData = response.data;
+      setError(null);
+      
+      // Use the product service to fetch products with any category filter
+      const params = {};
+      if (selectedCategory && selectedCategory !== 'all') {
+        params.category = selectedCategory;
+        console.log('Fetching products for category:', selectedCategory);
       } else {
-        setError("Unexpected data format received");
+        console.log('Fetching all products');
       }
-
-      setProducts(productsData);
-      setFilteredProducts(productsData);
-
-      // If we already have gold prices, calculate product prices immediately
-      if (Object.keys(caratPrices).length) {
-        calculateProductPrices(productsData, caratPrices);
+      
+      console.log('Calling ProductService.getProducts with params:', params);
+      const productsData = await ProductService.getProducts(params);
+      console.log('Received products data:', productsData);
+      
+      // Ensure we have a valid array of products
+      const validProducts = Array.isArray(productsData) ? productsData : [];
+      console.log('Processed valid products:', validProducts);
+      
+      setProducts(validProducts);
+      setFilteredProducts(validProducts);
+      
+      // If no products found, show a message
+      if (validProducts.length === 0) {
+        console.log('No products found for the current filter');
+        setError('No products available in this category. Please check back later.');
+      } else {
+        console.log(`Found ${validProducts.length} products`);
       }
-    } catch (err) {
-      setError(err.response?.data?.message || "Failed to fetch products");
+      
+      return validProducts;
+    } catch (error) {
+      console.error('Error fetching products:', error);
+      
+      // If we have cached data, keep showing it
+      if (products.length > 0) {
+        setError('Showing cached data. ' + (error.message || 'Unable to fetch latest products.'));
+      } else {
+        let errorMsg = 'Failed to load products. ';
+        
+        if (error.response) {
+          // Server responded with error status code
+          if (error.response.status === 401) {
+            errorMsg = 'Your session has expired. Please login again.';
+            // Optionally redirect to login
+            // navigate('/login');
+          } else if (error.response.status === 403) {
+            errorMsg = 'You do not have permission to view this content.';
+          } else if (error.response.status === 404) {
+            errorMsg = 'The requested resource was not found.';
+          } else if (error.response.status >= 500) {
+            errorMsg = 'Server error. Please try again later.';
+          } else {
+            errorMsg = `Error: ${error.response.status} - ${error.response.statusText}`;
+          }
+        } else if (error.request) {
+          // The request was made but no response was received
+          errorMsg = 'No response from server. Please check your internet connection.';
+        } else {
+          // Something happened in setting up the request
+          errorMsg = `Error: ${error.message}`;
+        }
+        
+        setError(errorMsg);
+      }
+      
+      return [];
     } finally {
       setIsLoading(false);
     }
-  };
 
-  const fetchCategories = async () => {
+  }, [selectedCategory, products, navigate]);
+
+  // Function to validate gold price
+  const validateGoldPrice = useCallback((prices, caratKey) => {
+    if (!prices || !caratKey) return false;
+    
+    const goldPricePerGram = prices[caratKey];
+    if (!goldPricePerGram || isNaN(goldPricePerGram)) {
+      console.warn(
+        `Invalid gold price for ${caratKey}:`,
+        prices[caratKey]
+      );
+      return false;
+    }
+    return true;
+  }, []);
+
+  // Fetch categories from API
+  const fetchCategories = useCallback(async () => {
     try {
       setCategoriesLoading(true);
-      const response = await axios.get(
-        "https://backend.srilaxmialankar.com/category/getAllCategory"
-      );
-      console.log("Fetched categories:", response.data);
-
+      // Use the full URL from the config
+      const response = await axios.get(CATEGORIES.ALL);
+      console.log('Categories API response:', response);
+      
       if (response.data && Array.isArray(response.data)) {
-        // Extract category titles from the response
-        const categoryList = response.data
-          .map((cat) => cat.title || cat.name || cat.categoryName)
-          .filter(Boolean);
-        setCategories(categoryList);
+        setCategories([{ _id: 'all', name: 'All Categories' }, ...response.data]);
+      } else if (response.data && response.data.data && Array.isArray(response.data.data)) {
+        // Handle case where categories are nested in data property
+        setCategories([{ _id: 'all', name: 'All Categories' }, ...response.data.data]);
       } else {
-        console.warn("Unexpected category data format");
-        // Fallback: extract categories from products
-        const uniqueCategories = [
-          ...new Set(products.map((product) => product.category)),
-        ].filter(Boolean);
-        setCategories(uniqueCategories);
+        console.warn('Unexpected categories format:', response.data);
+        setCategories([{ _id: 'all', name: 'All Categories' }]);
       }
-    } catch (err) {
-      console.error("Failed to fetch categories:", err);
-      // Fallback: extract categories from products
-      const uniqueCategories = [
-        ...new Set(products.map((product) => product.category)),
-      ].filter(Boolean);
-      setCategories(uniqueCategories);
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+      console.error('Error details:', error.response?.data || error.message);
+      setError('Failed to load categories. Using default categories.');
+      setCategories([{ _id: 'all', name: 'All Categories' }]);
     } finally {
       setCategoriesLoading(false);
     }
-  };
+  }, []);
+
+  // Initial categories fetch
+  useEffect(() => {
+    fetchCategories();
+  }, [fetchCategories]);
+
   const fetchGoldPrices = async () => {
     try {
-      const response = await axios.get(
-        "https://backend.srilaxmialankar.com/today-price/PriceRouting"
-      );
+      const response = await axios.get(OTHER.GOLD_PRICE);
       console.log("Fetched gold prices:", response.data);
 
       if (Array.isArray(response.data) && response.data.length > 0) {
@@ -271,8 +449,9 @@ const ViewProductsPage = () => {
     // Apply category filter
     if (selectedCategory !== "all") {
       filtered = filtered.filter(
-        (product) => product.category === selectedCategory
+        (product) => product.categoryId === selectedCategory || product.category === selectedCategory
       );
+      console.log('Filtered products by category:', selectedCategory, 'Count:', filtered.length);
     }
 
     // Apply carat filter
@@ -321,7 +500,7 @@ const ViewProductsPage = () => {
     }
 
     // const wsUrl = "wss://backend.srilaxmialankar.com/ws/goldprice";
-    const wsUrl = "ws://https://backend.srilaxmialankar.com/ws/goldprice";
+    const wsUrl = WS_CONFIG.GOLD_PRICE;
 
     console.log("Attempting to set up WebSocket connection");
     setWsStatus("Connecting...");
@@ -508,7 +687,7 @@ const ViewProductsPage = () => {
     try {
       // Assuming you have a DELETE endpoint
       const response = await axios.delete(
-        `https://backend.srilaxmialankar.com/wishlist/wishlist/${productId}`,
+        `http://localhost:8000/wishlist/wishlist/${productId}`, // TODO: Update to use WISHLIST.USER
         {
           headers: {
             // Add authorization header if needed
@@ -638,8 +817,8 @@ const ViewProductsPage = () => {
               >
                 <option value="all">All Categories</option>
                 {categories.map((category, index) => (
-                  <option key={index} value={category}>
-                    {category}
+                  <option key={category._id || index} value={category._id}>
+                    {category.name}
                   </option>
                 ))}
               </select>
@@ -754,15 +933,39 @@ const ViewProductsPage = () => {
                   </svg>
                 </button>
 
-                <img
-                  src={
-                    product.images?.[0] ||
-                    product.coverImage ||
-                    "https://via.placeholder.com/150"
-                  }
-                  alt={product.name}
-                  className="w-full h-48 object-cover rounded-lg mb-3"
-                />
+                <div 
+                  className="relative group cursor-pointer"
+                  onClick={() => openGallery(product)}
+                >
+                  {/* Main Image */}
+                  <img
+                    src={
+                      product.images?.[0] ||
+                      product.coverImage ||
+                      "https://via.placeholder.com/150"
+                    }
+                    alt={product.name}
+                    className="w-full h-48 object-cover rounded-lg mb-3 transition-all duration-300 hover:opacity-90"
+                  />
+                  
+                  {/* Image Gallery Indicator */}
+                  {(product.images?.length > 1 || (product.coverImage && product.images?.length > 0)) && (
+                    <div className="absolute bottom-4 right-2">
+                      <span className="bg-black bg-opacity-60 text-white text-xs px-2 py-1 rounded-full backdrop-blur-sm">
+                        +{product.images?.length || 0} {product.images?.length === 1 ? 'image' : 'images'}
+                      </span>
+                    </div>
+                  )}
+                  
+                  {/* Hover overlay */}
+                  <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 rounded-lg transition-all duration-300 flex items-center justify-center">
+                    <span className="text-white bg-black bg-opacity-70 rounded-full p-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                      </svg>
+                    </span>
+                  </div>
+                </div>
                 <h2 className="text-lg font-semibold uppercase text-yellow-700 truncate">
                   {product.name}
                 </h2>
