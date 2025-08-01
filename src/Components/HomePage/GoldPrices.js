@@ -38,37 +38,47 @@ const GoldPrices = () => {
       fetchPrices();
     }, 10000);
 
-    try {
-      socketRef.current = io(WS_CONFIG.BASE);
-
-      socketRef.current.on("connect", () => {
-        setConnectionStatus("connected");
-      });
-
-      socketRef.current.on("disconnect", () => {
-        setConnectionStatus("disconnected");
-      });
-
-      socketRef.current.on("connect_error", (error) => {
-        console.error("Socket connection error:", error);
-        setConnectionStatus("error");
-      });
-
-      socketRef.current.on("priceUpdate", (data) => {
-        const priceMap = {};
-        data.forEach((item) => {
-          priceMap[item.Carat] = item.TodayPricePerGram;
+    // Only try to connect via WebSocket in production
+    if (!process.env.NODE_ENV || process.env.NODE_ENV === 'production') {
+      try {
+        console.log('Attempting to connect to WebSocket:', WS_CONFIG.BASE);
+        socketRef.current = io(WS_CONFIG.BASE, {
+          reconnection: true,
+          reconnectionAttempts: 3,
+          reconnectionDelay: 1000,
         });
 
-        if (JSON.stringify(priceMap) !== JSON.stringify(pricesRef.current)) {
-          setPrices(priceMap);
-          pricesRef.current = priceMap;
-          setLastUpdate(new Date());
-        }
-      });
-    } catch (error) {
-      console.error("Failed to initialize socket:", error);
-      setConnectionStatus("error");
+        socketRef.current.on("connect", () => {
+          console.log('WebSocket connected');
+          setConnectionStatus("connected");
+        });
+
+        socketRef.current.on("disconnect", (reason) => {
+          console.log('WebSocket disconnected:', reason);
+          setConnectionStatus("disconnected");
+        });
+
+        socketRef.current.on("connect_error", (error) => {
+          console.error('WebSocket connection error:', error);
+          setConnectionStatus("error");
+        });
+
+        socketRef.current.on("priceUpdate", (data) => {
+          const priceMap = {};
+          data.forEach((item) => {
+            priceMap[item.Carat] = item.TodayPricePerGram;
+          });
+
+          if (JSON.stringify(priceMap) !== JSON.stringify(pricesRef.current)) {
+            setPrices(priceMap);
+            pricesRef.current = priceMap;
+            setLastUpdate(new Date());
+          }
+        });
+      } catch (error) {
+        console.error('Error initializing WebSocket:', error);
+        setConnectionStatus("error");
+      }
     }
 
     return () => {

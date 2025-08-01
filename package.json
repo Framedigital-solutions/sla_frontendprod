@@ -26,11 +26,15 @@
     "zustand": "^5.0.3"
   },
   "scripts": {
-    "start": "serve -s build",
+    "start": "react-scripts start",
+    "dev": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "predeploy": "npm run build",
+    "deploy": "az storage blob upload-batch -s build -d \"$web\" --account-name <your-storage-account-name> --overwrite"
   },
+  "homepage": ".",
   "eslintConfig": {
     "extends": [
       "react-app",
@@ -49,6 +53,7 @@
       "last 1 safari version"
     ]
   },
+  "proxy": "https://backend.srilaxmialankar.com",
   "devDependencies": {
     "autoprefixer": "^10.4.20",
     "postcss": "^8.4.47",

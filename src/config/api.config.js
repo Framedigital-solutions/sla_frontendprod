@@ -1,5 +1,6 @@
-// API Configuration - Production Backend
-const BASE_URL = 'https://backend.srilaxmialankar.com';
+// API Configuration
+const IS_DEVELOPMENT = process.env.NODE_ENV === 'development';
+const BASE_URL = process.env.REACT_APP_API_URL || (IS_DEVELOPMENT ? '' : 'https://backend.srilaxmialankar.com');
 
 // Authentication endpoints
 const AUTH = {
@@ -54,8 +55,11 @@ const OTHER = {
   GOLD_PRICE: `${BASE_URL}/today-price/PriceRouting`,
 };
 
-// WebSocket configuration - Using HTTPS for production
-const WS_CONFIG = {
+// WebSocket configuration
+const WS_CONFIG = IS_DEVELOPMENT ? {
+  BASE: 'ws://localhost:3001',
+  GOLD_PRICE: 'ws://localhost:3001/ws/goldprice',
+} : {
   BASE: 'wss://backend.srilaxmialankar.com',
   GOLD_PRICE: 'wss://backend.srilaxmialankar.com/ws/goldprice',
 };
