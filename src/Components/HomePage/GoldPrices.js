@@ -38,8 +38,8 @@ const GoldPrices = () => {
       fetchPrices();
     }, 10000);
 
-    // Only try to connect via WebSocket in production
-    if (!process.env.NODE_ENV || process.env.NODE_ENV === 'production') {
+    // Only connect via WebSocket if enabled in config
+    if (WS_CONFIG.ENABLED) {
       try {
         console.log('Attempting to connect to WebSocket:', WS_CONFIG.BASE);
         socketRef.current = io(WS_CONFIG.BASE, {
@@ -50,7 +50,7 @@ const GoldPrices = () => {
 
         socketRef.current.on("connect", () => {
           console.log('WebSocket connected');
-          setConnectionStatus("connected");
+          setConnectionStatus("connected (real-time)");
         });
 
         socketRef.current.on("disconnect", (reason) => {
@@ -60,7 +60,7 @@ const GoldPrices = () => {
 
         socketRef.current.on("connect_error", (error) => {
           console.error('WebSocket connection error:', error);
-          setConnectionStatus("error");
+          setConnectionStatus("error - using polling");
         });
 
         socketRef.current.on("priceUpdate", (data) => {
@@ -77,8 +77,11 @@ const GoldPrices = () => {
         });
       } catch (error) {
         console.error('Error initializing WebSocket:', error);
-        setConnectionStatus("error");
+        setConnectionStatus("error - using polling");
       }
+    } else {
+      console.log('WebSocket is disabled in development mode');
+      setConnectionStatus("using polling (development mode)");
     }
 
     return () => {

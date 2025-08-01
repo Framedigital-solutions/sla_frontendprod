@@ -13,8 +13,21 @@ const ShoppingCart = () => {
   console.log("cart user id: " + userid);
 
   useEffect(() => {
+    console.log('Cart updated:', cart);
     setCartItems(cart);
   }, [cart]);
+
+  useEffect(() => {
+    console.log('User ID in Cart component:', userid);
+    if (userid) {
+      console.log('Fetching cart for user:', userid);
+      getCart(userid).catch(error => {
+        console.error('Error fetching cart in Cart component:', error);
+      });
+    } else {
+      console.warn('No user ID found. User might not be logged in.');
+    }
+  }, [userid, getCart]);
 
   const handleQuantityChange = async (id, increment) => {
     const item = cart.find((item) => item._id === id);

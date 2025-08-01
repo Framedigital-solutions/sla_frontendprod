@@ -1,69 +1,134 @@
-import { BASE_URL } from '../config/api.config';
+import { CART } from '../config/api.config';
 
 // Product to add - {userId, productId, quantity}
 export const addToCart = async (productToAdd) => {
   try {
-    const response = await fetch(`${BASE_URL}/cart/add-to-cart`, {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      throw new Error("User not authenticated");
+    }
+
+    const response = await fetch(CART.ADD, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { 
+        "Content-Type": "application/json",
+        'Authorization': `Bearer ${token}`
+      },
       body: JSON.stringify(productToAdd),
     });
 
-    console.log(
-      "response from add to cart " + JSON.stringify(response, null, 2)
-    );
-
-    if (!response.ok) throw new Error("Failed to add to the cart ");
-    return await response.json();
-  } catch (error) {
-    throw new Error(error.message);
-  }
-};
-
-// Userid bhejna hai!
-export const getCart = async (userId) => {
-  console.log("userid in cart service " + userId);
-  try {
-    const res = await fetch(`${BASE_URL}/cart/cart/${userId}`);
-    const data = await res.json();
-
-    // console.log("data " + data?.cartId);
-    if (!res.ok) {
-      throw new Error("Failed to get items from cart");
+    const data = await response.json();
+    
+    if (!response.ok) {
+      console.error("Error adding to cart:", data.message || "Unknown error");
+      throw new Error(data.message || "Failed to add to cart");
     }
 
-    console.log("data getCart Cart Service: " + JSON.stringify(data, null, 2));
+    console.log("Product added to cart:", data);
     return data;
-  } catch (e) {
-    console.log(e.message);
+  } catch (error) {
+    console.error("Error in addToCart:", error);
+    throw error; // Re-throw to allow handling in the component
   }
 };
 
-// userId, ProductId
+// Get cart for a specific user
+export const getCart = async (userId) => {
+  console.log("Fetching cart for user:", userId);
+  try {
+    // Get the authentication token from local storage
+    const token = localStorage.getItem('token');
+    
+    if (!token) {
+      console.error("No authentication token found");
+      return { items: [] }; // Return empty cart if not authenticated
+    }
+
+    const response = await fetch(CART.USER(userId), {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    const data = await response.json();
+    
+    if (!response.ok) {
+      console.error("Error fetching cart:", data.message || "Unknown error");
+      throw new Error(data.message || "Failed to fetch cart");
+    }
+
+    console.log("Cart data received:", data);
+    return data;
+  } catch (error) {
+    console.error("Error in getCart:", error);
+    // Return an empty cart structure on error to prevent crashes
+    return { items: [], cartId: null };
+  }
+};
+
+// Remove a single quantity of an item from cart
+// userObj: { userId, productId }
 export const removeSingleItem = async (userObj) => {
   try {
-    const res = await fetch(`${BASE_URL}/cart/cart/remove-single-item`, {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      throw new Error("User not authenticated");
+    }
+
+    const response = await fetch(CART.REMOVE_SINGLE_ITEM, {
       method: "PATCH",
-      headers: { "Content-Type": "application/json" },
+      headers: { 
+        "Content-Type": "application/json",
+        'Authorization': `Bearer ${token}`
+      },
       body: JSON.stringify(userObj),
     });
-    if (!res.ok) throw new Error("Failed to remove single item cart ");
-    return await res.json();
+
+    const data = await response.json();
+    
+    if (!response.ok) {
+      console.error("Error removing item from cart:", data.message || "Unknown error");
+      throw new Error(data.message || "Failed to remove item from cart");
+    }
+
+    console.log("Item quantity reduced:", data);
+    return data;
   } catch (error) {
-    throw new Error(error.message);
+    console.error("Error in removeSingleItem:", error);
+    throw error;
   }
 };
 
+// Remove all quantities of an item from cart
+// userObj: { userId, productId }
 export const removeFromCart = async (userObj) => {
   try {
-    const res = await fetch(`${BASE_URL}/cart/remove-from-cart`, {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      throw new Error("User not authenticated");
+    }
+
+    const response = await fetch(CART.REMOVE_ITEM, {
       method: "DELETE",
-      headers: { "Content-Type": "application/json" },
+      headers: { 
+        "Content-Type": "application/json",
+        'Authorization': `Bearer ${token}`
+      },
       body: JSON.stringify(userObj),
     });
-    if (!res.ok) throw new Error("Failed to remove from the cart ");
-    return await res.json();
+
+    const data = await response.json();
+    
+    if (!response.ok) {
+      console.error("Error removing item from cart:", data.message || "Unknown error");
+      throw new Error(data.message || "Failed to remove item from cart");
+    }
+
+    console.log("Item removed from cart:", data);
+    return data;
   } catch (error) {
-    throw new Error(error.message);
+    console.error("Error in removeFromCart:", error);
+    throw error;
   }
 };

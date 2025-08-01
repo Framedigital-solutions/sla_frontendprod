@@ -24,17 +24,35 @@ export const CartProvider = ({ children }) => {
   const setCartId = userStore((state) => state.setCartId);
 
   const addToCartHandler = async (productObj) => {
-    // console.log(JSON.stringify(productObj, null, 2));
-    const data = await addToCart(productObj);
-    console.log("data after add to cart " + JSON.stringify(data, null, 2));
-    localStorage.setItem("cartId", data?.cart.cartId);
-    if (!localStorage.getItem("cart")) {
-      localStorage.setItem("cart", JSON.stringify([]));
+    if (!productObj?.userId || !productObj?.productId) {
+      console.error("Invalid product object:", productObj);
+      throw new Error("Invalid product data");
     }
-    let cartData = JSON.parse(localStorage.getItem("cart"));
-    cartData.push(data?.cart);
-    localStorage.setItem("cart", JSON.stringify(cartData));
-    getCartHandler(data?.cart.userId);
+
+    try {
+      console.log("Adding to cart:", productObj);
+      const data = await addToCart(productObj);
+      
+      if (!data || !data.cart) {
+        console.error("Invalid response from addToCart:", data);
+        throw new Error("Failed to add item to cart");
+      }
+
+      console.log("Item added to cart:", data);
+      
+      // Update local storage with the new cart ID if available
+      if (data.cart.cartId) {
+        localStorage.setItem("cartId", data.cart.cartId);
+      }
+      
+      // Refresh the cart to ensure we have the latest state
+      await getCartHandler({ userId: productObj.userId });
+      
+      return data;
+    } catch (error) {
+      console.error("Error in addToCartHandler:", error);
+      throw error; // Re-throw to allow handling in the component
+    }
   };
 
   const removeFromCartHandler = async (userObj) => {
@@ -52,34 +70,56 @@ export const CartProvider = ({ children }) => {
   };
 
   const getCartHandler = async (userObj) => {
-    //  console.log("userObj " + userObj);
+    if (!userObj || !userObj.userId) {
+      console.error("Invalid user object provided to getCartHandler");
+      setCart([]); // Reset cart if no valid user
+      return;
+    }
 
     try {
-      const data = await getCart(userObj);
+      console.log("Fetching cart for user:", userObj.userId);
+      const data = await getCart(userObj.userId);
+      
+      // Handle case where data is not in expected format
+      if (!data) {
+        console.warn("No data received from getCart");
+        setCart([]);
+        return;
+      }
+
+      console.log("Cart data received:", data);
+      
       let dataItems = [];
-
-      if (data?.items?.length > 0) {
+      if (Array.isArray(data.items)) {
         dataItems = [...data.items];
+      } else if (data.items && typeof data.items === 'object') {
+        // Handle case where items might be an object instead of array
+        dataItems = Object.values(data.items);
       }
 
-      console.log("cart data " + JSON.stringify(data, null, 2));
-      console.log("cart id in context getcart handler  " + data?.cartId);
-      // Set the cartId in the store
-      if (data?.cartId) {
-        localStorage.setItem("cartId", data?.cartId);
-        userStore.getState().setCartId(data.cartId); // Update cartId in Zustand store
+      // Set the cartId in the store and local storage
+      if (data.cartId) {
+        console.log("Setting cart ID:", data.cartId);
+        localStorage.setItem("cartId", data.cartId);
+        userStore.getState().setCartId(data.cartId);
       }
 
-      // Set the cart items in the store
-      setCart(
-        dataItems.map((item) => ({
-          quantity: item?.quantity,
-          realTimeTotalPrice: item?.realTimeTotalPrice,
-          ...item?.product,
-        }))
-      );
+      // Transform and set cart items
+      const cartItems = dataItems
+        .filter(item => item && item.product) // Filter out invalid items
+        .map(item => ({
+          ...item.product,
+          quantity: item.quantity || 1,
+          realTimeTotalPrice: item.realTimeTotalPrice || (item.product?.price * (item.quantity || 1))
+        }));
+
+      console.log("Setting cart items:", cartItems);
+      setCart(cartItems);
+      
     } catch (error) {
-      console.error("Error fetching cart data:", error.message);
+      console.error("Error in getCartHandler:", error);
+      // Don't clear cart on error to prevent UI flicker
+      // The error is already logged, no need to throw
     }
   };
 

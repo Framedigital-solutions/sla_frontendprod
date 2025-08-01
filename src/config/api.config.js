@@ -37,8 +37,10 @@ const WISHLIST = {
 // Cart endpoints
 const CART = {
   BASE: `${BASE_URL}/cart`,
-  ADD: `${BASE_URL}/cart/add`,
-  USER: (userId) => `${BASE_URL}/cart/user/${userId}`,
+  ADD: `${BASE_URL}/cart/add-to-cart`,
+  USER: (userId) => `${BASE_URL}/cart/cart/${userId}`,
+  REMOVE_ITEM: `${BASE_URL}/cart/remove-item`,
+  REMOVE_SINGLE_ITEM: `${BASE_URL}/cart/remove-single-item`
 };
 
 // Support endpoints
@@ -56,10 +58,8 @@ const OTHER = {
 };
 
 // WebSocket configuration
-const WS_CONFIG = IS_DEVELOPMENT ? {
-  BASE: 'ws://localhost:3001',
-  GOLD_PRICE: 'ws://localhost:3001/ws/goldprice',
-} : {
+const WS_CONFIG = {
+  ENABLED: !IS_DEVELOPMENT, // Disable WebSocket in development
   BASE: 'wss://backend.srilaxmialankar.com',
   GOLD_PRICE: 'wss://backend.srilaxmialankar.com/ws/goldprice',
 };

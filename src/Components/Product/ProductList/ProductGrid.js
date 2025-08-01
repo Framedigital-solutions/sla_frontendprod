@@ -499,10 +499,16 @@ const ViewProductsPage = () => {
       return setupPolling();
     }
 
-    // const wsUrl = "wss://backend.srilaxmialankar.com/ws/goldprice";
-    const wsUrl = WS_CONFIG.GOLD_PRICE;
+    // Skip WebSocket setup if disabled in config
+    if (!WS_CONFIG.ENABLED) {
+      console.log("WebSocket is disabled in development mode");
+      setWsStatus("Using polling (development mode)");
+      setupPolling();
+      return;
+    }
 
-    console.log("Attempting to set up WebSocket connection");
+    const wsUrl = WS_CONFIG.GOLD_PRICE;
+    console.log("Attempting to set up WebSocket connection to:", wsUrl);
     setWsStatus("Connecting...");
 
     try {
