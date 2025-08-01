@@ -28,13 +28,28 @@
   "scripts": {
     "start": "react-scripts start",
     "dev": "react-scripts start",
-    "build": "react-scripts build",
+    "build": "GENERATE_SOURCEMAP=false CI=false react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "predeploy": "npm run build",
     "deploy": "az storage blob upload-batch -s build -d \"$web\" --account-name <your-storage-account-name> --overwrite"
   },
   "homepage": ".",
+  "jest": {
+    "transformIgnorePatterns": [
+      "/node_modules/(?!(axios|@?react-router)/)"
+    ],
+    "moduleNameMapper": {
+      "^axios$": "<rootDir>/node_modules/axios/dist/axios.js",
+      "^swiper/react$": "<rootDir>/src/__mocks__/swiper/react.js",
+      "^swiper/modules$": "<rootDir>/src/__mocks__/swiper/modules.js",
+      "^swiper/css": "<rootDir>/src/__mocks__/styleMock.js",
+      "^swiper/css/(.*)$": "<rootDir>/src/__mocks__/styleMock.js",
+      "^lucide-react$": "<rootDir>/src/__mocks__/lucide-react.js",
+      "\\.(css|less|scss|sass)$": "<rootDir>/src/__mocks__/styleMock.js",
+      "\\.(jpg|jpeg|png|gif|webp|svg)$": "<rootDir>/src/__mocks__/fileMock.js"
+    }
+  },
   "eslintConfig": {
     "extends": [
       "react-app",
@@ -55,7 +70,12 @@
   },
   "proxy": "https://backend.srilaxmialankar.com",
   "devDependencies": {
+    "@azure/static-web-apps-cli": "^2.0.6",
+    "@babel/preset-env": "^7.28.0",
+    "@babel/preset-react": "^7.27.1",
     "autoprefixer": "^10.4.20",
+    "babel-jest": "^30.0.5",
+    "jest-environment-jsdom": "^30.0.5",
     "postcss": "^8.4.47",
     "tailwindcss": "^3.4.14"
   }
